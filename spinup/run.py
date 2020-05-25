@@ -10,6 +10,7 @@ import os.path as osp
 import string
 import tensorflow as tf
 import torch
+import safety_envs
 from copy import deepcopy
 from textwrap import dedent
 
