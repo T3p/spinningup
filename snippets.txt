@@ -1,1 +1,1 @@
-python spinup/run.py ddpg --exp_name prova_minigolf --env ComplexMinigolf-v0 --hid[h] [4] [4] --act torch.nn.Tanh --seed 0 --dt --data_dir ~/logs --max_ep_len 20 --steps_per_epoch 10000 --epochs 700
+python spinup/run.py ddpg --env ComplexMinigolf-v0 --hid [32,32] --act torch.nn.Tanh --dt --data_dir ~/logs --max_ep_len 20 --steps_per_epoch 10000 --epochs 200 --pi_lr 1e-5 --q_lr 1e-4 --exp_name minigolf54 --seed 787 81 663 477 774

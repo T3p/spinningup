@@ -46,7 +46,8 @@ def ddpg(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
          steps_per_epoch=4000, epochs=100, replay_size=int(1e6), gamma=0.99, 
          polyak=0.995, pi_lr=1e-3, q_lr=1e-3, batch_size=100, start_steps=10000, 
          update_after=1000, update_every=50, act_noise=0.1, num_test_episodes=10, 
-         max_ep_len=1000, logger_kwargs=dict(), save_freq=1, info_key='danger'):
+         max_ep_len=1000, logger_kwargs=dict(), save_freq=1, info_key='danger',
+         init=None):
     """
     Deep Deterministic Policy Gradient (DDPG)
 
@@ -147,7 +148,7 @@ def ddpg(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
     act_limit = env.action_space.high[0]
 
     # Create actor-critic module and target networks
-    ac = actor_critic(env.observation_space, env.action_space, **ac_kwargs)
+    ac = actor_critic(env.observation_space, env.action_space, **ac_kwargs, init=init)
     ac_targ = deepcopy(ac)
 
     # Freeze target networks with respect to optimizers (only update via polyak averaging)
@@ -244,7 +245,8 @@ def ddpg(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
     # Prepare for interaction with environment
     total_steps = steps_per_epoch * epochs
     start_time = time.time()
-    o, ep_ret, ep_len, ep_info = env.reset(), 0, 0, 0
+    o, ep_ret, ep_len, tr_info, it_info = env.reset(), 0, 0, 0, 0
+    eps_per_iter = 0
 
     # Main loop: collect experience in env and update/log each epoch
     for t in range(total_steps):
@@ -252,16 +254,17 @@ def ddpg(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
         # Until start_steps have elapsed, randomly sample actions
         # from a uniform distribution for better exploration. Afterwards, 
         # use the learned policy (with some noise, via act_noise). 
-        if t > start_steps:
-            a = get_action(o, act_noise)
-        else:
-            a = env.action_space.sample()
+        #if t > start_steps:
+        a = get_action(o, act_noise)
+        #else: #HELL NO
+            #a = env.action_space.sample()
 
         # Step the env
         o2, r, d, info = env.step(a)
+        #print(o, a, ac.act(torch.as_tensor(o, dtype=torch.float32)), o2, info[info_key])
         ep_ret += r
         ep_len += 1
-        ep_info += info[info_key]
+        tr_info = max(info[info_key], tr_info)
 
         # Ignore the "done" signal if it comes from hitting the time
         # horizon (that is, when it's an artificial terminal signal
@@ -277,8 +280,10 @@ def ddpg(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
 
         # End of trajectory handling
         if d or (ep_len == max_ep_len):
-            logger.store(EpRet=ep_ret, EpLen=ep_len)
-            o, ep_ret, ep_len = env.reset(), 0, 0
+            logger.store(EpRet=ep_ret, EpLen=ep_len)            
+            it_info += tr_info
+            o, ep_ret, ep_len, tr_info = env.reset(), 0, 0, 0
+            eps_per_iter += 1
 
         # Update handling
         if t >= update_after and t % update_every == 0:
@@ -289,8 +294,6 @@ def ddpg(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
         # End of epoch handling
         if (t+1) % steps_per_epoch == 0:
             epoch = (t+1) // steps_per_epoch
-            ep_info = 0
-
             # Save model
             if (epoch % save_freq == 0) or (epoch == epochs):
                 logger.save_state({'env': env}, None)
@@ -299,6 +302,9 @@ def ddpg(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
             test_agent()
 
             # Log info about epoch
+            for name, param in ac.pi.named_parameters():
+                if param.requires_grad:
+                    print('Policy params:', param.data)
             logger.log_tabular('Epoch', epoch)
             logger.log_tabular('EpRet', with_min_and_max=True)
             logger.log_tabular('TestEpRet', with_min_and_max=True)
@@ -309,8 +315,10 @@ def ddpg(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
             logger.log_tabular('LossPi', average_only=True)
             logger.log_tabular('LossQ', average_only=True)
             logger.log_tabular('Time', time.time()-start_time)
-            logger.log_tabular('Info', ep_info)
+            logger.log_tabular('Info', it_info / eps_per_iter)
             logger.dump_tabular()
+            it_info = 0
+            eps_per_iter = 0
 
 if __name__ == '__main__':
     import argparse
