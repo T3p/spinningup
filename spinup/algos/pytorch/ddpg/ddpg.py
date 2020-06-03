@@ -302,6 +302,7 @@ def ddpg(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
             test_agent()
 
             # Log info about epoch
+            perf = logger.get_stats('EpRet')[0]
             for name, param in ac.pi.named_parameters():
                 if param.requires_grad:
                     print('Policy params:', param.data)
@@ -317,10 +318,11 @@ def ddpg(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
             logger.log_tabular('Time', time.time()-start_time)
             logger.log_tabular('Info', it_info / eps_per_iter)
             logger.log_tabular('fail', it_info)
+            logger.log_tabular('perf', perf)
             logger.dump_tabular()
             it_info = 0
             eps_per_iter = 0
-    return logger.get_stats('AverageEpRet')
+    return perf
 
 if __name__ == '__main__':
     import argparse
