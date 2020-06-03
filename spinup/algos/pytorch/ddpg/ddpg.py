@@ -316,9 +316,12 @@ def ddpg(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
             logger.log_tabular('LossQ', average_only=True)
             logger.log_tabular('Time', time.time()-start_time)
             logger.log_tabular('Info', it_info / eps_per_iter)
+            logger.log_tabular('fail', it_info)
+            logger.log_tabular('perf', ep_ret / eps_per_iter)
             logger.dump_tabular()
             it_info = 0
             eps_per_iter = 0
+    return ep_ret / eps_per_iter
 
 if __name__ == '__main__':
     import argparse

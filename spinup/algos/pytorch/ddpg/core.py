@@ -47,7 +47,7 @@ class MLPQFunction(nn.Module):
 
 class MLPActorCritic(nn.Module):
 
-    def __init__(self, observation_space, action_space, hidden_sizes=(256,256),
+    def __init__(self, observation_space, action_space, hidden_sizes=(32,32),
                  activation=nn.ReLU, init=None):
         super().__init__()
 
@@ -55,8 +55,8 @@ class MLPActorCritic(nn.Module):
         act_dim = action_space.shape[0]
         act_limit = action_space.high[0]
 
-        # build policy and value functions
-        self.pi = MLPActor(obs_dim, act_dim, hidden_sizes, activation, act_limit, init)
+        # build policy and value functions LINEAR ACTOR!!!
+        self.pi = MLPActor(obs_dim, act_dim, [], activation, act_limit, init)
         self.q = MLPQFunction(obs_dim, act_dim, hidden_sizes, activation)
 
     def act(self, obs):
