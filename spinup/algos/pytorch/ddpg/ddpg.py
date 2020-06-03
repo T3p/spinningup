@@ -320,7 +320,7 @@ def ddpg(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
             logger.dump_tabular()
             it_info = 0
             eps_per_iter = 0
-    return logger.get_stats('AvgEpRet')
+    return logger.get_stats('AverageEpRet')
 
 if __name__ == '__main__':
     import argparse
