@@ -260,6 +260,7 @@ def ddpg(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
             #a = env.action_space.sample()
 
         # Step the env
+        #print(o, a)
         o2, r, d, info = env.step(a)
         #print(o, a, ac.act(torch.as_tensor(o, dtype=torch.float32)), o2, info[info_key])
         ep_ret += r
@@ -308,9 +309,9 @@ def ddpg(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
                     print('Policy params:', param.data)
             logger.log_tabular('Epoch', epoch)
             logger.log_tabular('EpRet', with_min_and_max=True)
-            logger.log_tabular('TestEpRet', with_min_and_max=True)
+            #logger.log_tabular('TestEpRet', with_min_and_max=True)
             logger.log_tabular('EpLen', average_only=True)
-            logger.log_tabular('TestEpLen', average_only=True)
+            #logger.log_tabular('TestEpLen', average_only=True)
             logger.log_tabular('TotalEnvInteracts', t)
             logger.log_tabular('QVals', with_min_and_max=True)
             logger.log_tabular('LossPi', average_only=True)
